@@ -10,7 +10,7 @@ interface MenuViewProps {
 const CATEGORIES = [
   { id: 'message', label: 'Message', icon: MessageSquare },
   { id: 'enregistrement', label: 'Enregistrement', icon: Bookmark },
-  { id: 'boutique', label: 'Boutique', icon: ShoppingBag },
+  { id: 'boutique', label: 'TYDS SHOP', icon: ShoppingBag },
   { id: 'maps', label: 'Maps', icon: MapPin },
 ] as const;
 

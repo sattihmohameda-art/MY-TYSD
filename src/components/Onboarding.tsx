@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronRight, Sparkles, Target, Bike, 
-  ShoppingBag, Trophy, Star, Search, X
+  ShoppingBag, Trophy, Star, Search, X, ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
@@ -672,6 +672,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             Retour
           </button>
         )}
+
+        {/* Trust Badge */}
+        <div className="mt-auto pt-8 flex items-center justify-center gap-2 text-on-surface/40">
+          <ShieldCheck size={14} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Données cryptées & hébergées en Suisse 🇨🇭</span>
+        </div>
       </div>
     </div>
   );

@@ -6,8 +6,14 @@ import { EditorialView } from './components/EditorialView';
 import { MenuView } from './components/MenuView';
 import { Onboarding } from './components/Onboarding';
 import { MessagesView } from './components/MessagesView';
+import { SideActions } from './components/SideActions';
+import { ShopView } from './components/ShopView';
+import { SavedView } from './components/SavedView';
+import { MapView } from './components/MapView';
+import { AuthView } from './components/AuthView';
 import { motion, AnimatePresence } from 'motion/react';
-import { Tab, FEED_LIBRARY, ARTICLE_LIBRARY } from './data/content';
+import { Tab, FEED_LIBRARY, ARTICLE_LIBRARY, FeedContent } from './data/content';
+import { MapPin, Bookmark, ShoppingBag } from 'lucide-react';
 
 interface UserProfile {
   gender: string;
@@ -27,17 +33,102 @@ interface UserProfile {
 }
 
 export default function App() {
+  const [user, setUser] = useState<{ email: string } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('glow');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [savedItems, setSavedItems] = useState<{ item: FeedContent; category: string }[]>([]);
+  const [selectedFriendName, setSelectedFriendName] = useState<string | undefined>(undefined);
+  const [timeLeft, setTimeLeft] = useState<number>(2700); // 45 minutes in seconds
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('glow_up_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+
     const savedProfile = localStorage.getItem('glow_up_profile');
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
     }
+    
+    const saved = localStorage.getItem('glow_up_saved');
+    if (saved) {
+      setSavedItems(JSON.parse(saved));
+    }
+
+    // Timer logic
+    const resetTimer = () => {
+      const now = new Date();
+      const today = now.toDateString();
+      const lastReset = localStorage.getItem('glow_up_last_reset');
+
+      if (lastReset !== today) {
+        setTimeLeft(2700);
+        localStorage.setItem('glow_up_time_left', '2700');
+        localStorage.setItem('glow_up_last_reset', today);
+      } else {
+        const savedTime = localStorage.getItem('glow_up_time_left');
+        if (savedTime) setTimeLeft(parseInt(savedTime, 10));
+      }
+    };
+
+    resetTimer();
+    const interval = setInterval(resetTimer, 60000); // Check every minute for midnight reset
+
     setIsLoading(false);
+    return () => clearInterval(interval);
   }, []);
+
+  const handleVideoWatch = () => {
+    setTimeLeft(prev => {
+      const next = Math.max(0, prev - 60); // Decrease by 1 minute
+      localStorage.setItem('glow_up_time_left', next.toString());
+      return next;
+    });
+  };
+
+  const handleSave = (id: string) => {
+    const item = FEED_LIBRARY.find(f => f.id === id);
+    if (!item) return;
+
+    setSavedItems(prev => {
+      const isAlreadySaved = prev.find(si => si.item.id === id);
+      let next;
+      if (isAlreadySaved) {
+        next = prev.filter(si => si.item.id !== id);
+      } else {
+        // Determine category
+        let category = 'Favoris';
+        const tags = item.hashtags.map(t => t.toLowerCase());
+        const caption = item.caption.toLowerCase();
+        
+        if (tags.some(t => t.includes('mecanique')) || caption.includes('mecanique') || caption.includes('voiture')) category = 'Mécanique';
+        else if (tags.some(t => t.includes('maquillage') || t.includes('makeup') || t.includes('beauty'))) category = 'Maquillage';
+        else if (tags.some(t => t.includes('bricolage') || t.includes('diy') || t.includes('renov'))) category = 'Bricolage';
+        else if (tags.some(t => t.includes('gaming') || t.includes('esports'))) category = 'Gaming';
+        else if (tags.some(t => t.includes('maths') || t.includes('learning') || t.includes('study'))) category = 'Éducation';
+        else if (tags.some(t => t.includes('animaux'))) category = 'Animaux';
+        else if (tags.some(t => t.includes('voyage'))) category = 'Voyage';
+        else if (tags.some(t => t.includes('motos'))) category = 'Moto';
+        else if (tags.some(t => t.includes('mode') || t.includes('style') || t.includes('look'))) category = 'Mode';
+        else if (tags.some(t => t.includes('sport') || t.includes('fitness'))) category = 'Sport';
+        else if (tags.some(t => t.includes('business') || t.includes('money'))) category = 'Business';
+        
+        next = [...prev, { item, category }];
+      }
+      localStorage.setItem('glow_up_saved', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleRemoveSaved = (id: string) => {
+    setSavedItems(prev => {
+      const next = prev.filter(si => si.item.id !== id);
+      localStorage.setItem('glow_up_saved', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const handleOnboardingComplete = (newProfile: UserProfile) => {
     setProfile(newProfile);
@@ -92,8 +183,15 @@ export default function App() {
 
   const handleResetProfile = () => {
     localStorage.removeItem('glow_up_profile');
+    localStorage.removeItem('glow_up_user');
     setProfile(null);
+    setUser(null);
     setActiveTab('glow');
+  };
+
+  const handleAuthSuccess = (userData: { email: string }) => {
+    setUser(userData);
+    localStorage.setItem('glow_up_user', JSON.stringify(userData));
   };
 
   if (isLoading) return null;
@@ -101,20 +199,28 @@ export default function App() {
   return (
     <div className="relative min-h-screen bg-surface selection:bg-black selection:text-white">
       <AnimatePresence>
-        {!profile && (
-          <Onboarding onComplete={handleOnboardingComplete} />
+        {!user && (
+          <AuthView onAuthSuccess={handleAuthSuccess} />
         )}
       </AnimatePresence>
 
-      {profile && (
+      {user && (
         <>
-          {activeTab !== 'menu' && activeTab !== 'message' && (
-            <TopNav activeTab={activeTab} onTabChange={setActiveTab} />
+          <AnimatePresence>
+            {!profile && (
+              <Onboarding onComplete={handleOnboardingComplete} />
+            )}
+          </AnimatePresence>
+
+          {profile && (
+            <>
+          {activeTab !== 'menu' && activeTab !== 'message' && activeTab !== 'maps' && activeTab !== 'enregistrement' && activeTab !== 'boutique' && (
+            <TopNav activeTab={activeTab} onTabChange={setActiveTab} timeLeft={timeLeft} />
           )}
 
           <main className="h-full">
             <AnimatePresence mode="wait">
-              {activeTab === 'glow' || activeTab === 'detente' ? (
+              {(activeTab === 'glow' || activeTab === 'detente') ? (
                 <motion.div
                   key={`${activeTab}-${profile.ageGroup}`}
                   initial={{ opacity: 0 }}
@@ -126,12 +232,16 @@ export default function App() {
                     filteredFeed.map((item) => (
                       <FeedItem 
                         key={item.id} 
+                        id={item.id}
                         caption={item.caption}
                         hashtags={item.hashtags}
                         musicTitle={item.musicTitle}
                         imageUrl={item.imageUrl}
                         likes={item.likes}
+                        isSaved={!!savedItems.find(si => si.item.id === item.id)}
+                        onSave={handleSave}
                         onSwipeMenu={() => setActiveTab('menu')}
+                        onView={handleVideoWatch}
                       />
                     ))
                   ) : (
@@ -145,10 +255,9 @@ export default function App() {
               ) : activeTab === 'infos' ? (
                 <motion.div
                   key={`infos-${profile.ageGroup}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
                   <EditorialView article={currentArticle} />
                 </motion.div>
@@ -170,14 +279,66 @@ export default function App() {
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <MessagesView onBack={() => setActiveTab('menu')} />
+                  <MessagesView 
+                    onBack={() => {
+                      setActiveTab('menu');
+                      setSelectedFriendName(undefined);
+                    }} 
+                    initialFriendName={selectedFriendName}
+                  />
+                </motion.div>
+              ) : activeTab === 'boutique' ? (
+                <motion.div
+                  key={`boutique-${profile.ageGroup}`}
+                  initial={{ opacity: 0, y: 100 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 100 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <ShopView onBack={() => setActiveTab('menu')} />
+                </motion.div>
+              ) : activeTab === 'enregistrement' ? (
+                <motion.div
+                  key={`saved-${profile.ageGroup}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <SavedView 
+                    savedItems={savedItems} 
+                    onRemove={handleRemoveSaved} 
+                    onBack={() => setActiveTab('menu')} 
+                  />
+                </motion.div>
+              ) : activeTab === 'maps' ? (
+                <motion.div
+                  key={`${activeTab}-${profile.ageGroup}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-screen w-full"
+                >
+                  <MapView 
+                    onBack={() => setActiveTab('menu')} 
+                    onMessage={(name) => {
+                      setSelectedFriendName(name);
+                      setActiveTab('message');
+                    }}
+                  />
                 </motion.div>
               ) : null}
             </AnimatePresence>
           </main>
 
-          {activeTab !== 'message' && (
+          {(activeTab === 'glow' || activeTab === 'detente') && (
+            <SideActions onSelectTab={setActiveTab} activeTab={activeTab} />
+          )}
+
+          {activeTab !== 'message' && activeTab !== 'maps' && activeTab !== 'enregistrement' && activeTab !== 'boutique' && (
             <BottomNav onResetProfile={handleResetProfile} />
+          )}
+            </>
           )}
         </>
       )}

@@ -1,26 +1,57 @@
-import React from 'react';
-import { Star, Share2, Music2, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Share, Music2, ChevronLeft, Bookmark } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface FeedItemProps {
+  id: string;
   caption: string;
   hashtags: string[];
   musicTitle: string;
   imageUrl: string;
   likes: string;
+  isSaved?: boolean;
+  onSave?: (id: string) => void;
   onSwipeMenu?: () => void;
+  onView?: () => void;
 }
 
 export const FeedItem: React.FC<FeedItemProps> = ({
+  id,
   caption,
   hashtags,
   musicTitle,
   imageUrl,
   likes,
+  isSaved = false,
+  onSave,
   onSwipeMenu,
+  onView,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasViewed = useRef(false);
+
+  useEffect(() => {
+    if (!onView) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasViewed.current) {
+          onView();
+          hasViewed.current = true;
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [onView]);
+
   return (
-    <div className="relative h-screen w-full bg-surface overflow-hidden snap-start">
+    <div ref={containerRef} className="relative h-screen w-full bg-surface overflow-hidden snap-start">
       {/* Background Media */}
       <img
         src={imageUrl}
@@ -30,44 +61,25 @@ export const FeedItem: React.FC<FeedItemProps> = ({
       />
       <div className="absolute inset-0 video-overlay-gradient" />
 
-      {/* Swipe Button - Centered Right */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 z-50">
-        <motion.button 
-          drag="x"
-          dragConstraints={{ left: -80, right: 0 }}
-          onDragEnd={(_, info) => {
-            if (info.offset.x < -30) {
-              onSwipeMenu?.();
-            }
-          }}
-          onClick={onSwipeMenu}
-          className="group relative flex items-center"
-        >
-          <div className="bg-on-surface/5 backdrop-blur-xl border-y border-l border-on-surface/10 py-6 px-1 rounded-l-2xl shadow-xl flex items-center justify-center text-on-surface/70 group-hover:bg-on-surface/10 group-hover:text-on-surface transition-all">
-            <motion.div 
-              animate={{ x: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-            >
-              <ChevronLeft size={24} strokeWidth={2.5} className="drop-shadow-[0_0_4px_rgba(0,0,0,0.1)]" />
-            </motion.div>
-          </div>
-        </motion.button>
-      </div>
-
       {/* Right Interaction Rail */}
       <div className="absolute right-4 bottom-16 flex flex-col items-center gap-6 z-40">
-        <button className="flex flex-col items-center group transition-transform active:scale-90">
-          <div className="w-14 h-14 glass-pill rounded-full flex items-center justify-center text-on-surface mb-1 border border-on-surface/10">
-            <Star size={28} fill="currentColor" />
+        <button 
+          onClick={() => onSave?.(id)}
+          className="flex flex-col items-center group transition-transform active:scale-90"
+        >
+          <div className={`w-14 h-14 glass-pill rounded-full flex items-center justify-center mb-1 border border-on-surface/10 transition-colors ${isSaved ? 'text-[#FE2C55] bg-on-surface/10' : 'text-on-surface'}`}>
+            <Bookmark size={28} fill={isSaved ? "currentColor" : "none"} />
           </div>
-          <span className="text-on-surface text-[10px] font-black tracking-widest uppercase text-shadow-sm">{likes}</span>
+          <span className="text-on-surface text-[10px] font-black tracking-widest uppercase text-shadow-sm">
+            {isSaved ? 'Enregistré' : 'Enregistrer'}
+          </span>
         </button>
 
         <button className="flex flex-col items-center group transition-transform active:scale-90">
           <div className="w-14 h-14 glass-pill rounded-full flex items-center justify-center text-on-surface mb-1 border border-on-surface/10">
-            <Share2 size={28} />
+            <Share size={28} />
           </div>
-          <span className="text-on-surface text-[10px] font-black tracking-widest uppercase text-shadow-sm">Envoyer</span>
+          <span className="text-on-surface text-[10px] font-black tracking-widest uppercase text-shadow-sm">Partager</span>
         </button>
       </div>
 

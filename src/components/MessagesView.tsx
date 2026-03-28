@@ -31,6 +31,7 @@ interface Conversation {
 
 interface MessagesViewProps {
   onBack: () => void;
+  initialFriendName?: string;
 }
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
@@ -64,13 +65,35 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
   }
 ];
 
-export const MessagesView: React.FC<MessagesViewProps> = ({ onBack }) => {
+export const MessagesView: React.FC<MessagesViewProps> = ({ onBack, initialFriendName }) => {
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState('');
   const [activeChat, setActiveChat] = useState<Conversation | null>(null);
+
+  useEffect(() => {
+    if (initialFriendName) {
+      const conv = conversations.find(c => c.name.toLowerCase().includes(initialFriendName.toLowerCase()));
+      if (conv) {
+        setActiveChat(conv);
+      } else {
+        // Create a temporary conversation if not found
+        const newConv: Conversation = {
+          id: `temp-${Date.now()}`,
+          name: initialFriendName,
+          lastMessage: 'Nouveau message',
+          time: 'Maintenant',
+          isFavorite: false,
+          isBlocked: false,
+          avatarSeed: initialFriendName.toLowerCase()
+        };
+        setConversations(prev => [newConv, ...prev]);
+        setActiveChat(newConv);
+      }
+    }
+  }, [initialFriendName]);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', text: 'Salut ! Comment ça va ?', sender: 'them', time: '10:00', language: 'fr' },
     { id: '2', text: 'Ça va super et toi ?', sender: 'me', time: '10:02', language: 'fr' },
