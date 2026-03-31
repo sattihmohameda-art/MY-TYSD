@@ -1,133 +1,84 @@
-import React, { useState } from 'react';
-import { Bookmark, ChevronLeft, Grid, List, Trash2, ExternalLink } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { FeedContent } from '../data/content';
+import React from 'react';
+import { Bookmark, ChevronLeft, ArrowRight } from 'lucide-react';
+
+// Mocks - Remplacer par les vraies données plus tard
+const savedItemsData = [
+    {
+        id: 'video1',
+        type: 'video',
+        title: 'Comment faire une vidange',
+        category: 'Mécanique',
+        thumbnail: 'https://images.unsplash.com/photo-1599796015033-0010c7858c67?q=80&w=1000'
+    },
+    {
+        id: 'article1',
+        type: 'article',
+        title: 'Le guide du maquillage parfait',
+        category: 'Maquillage',
+        thumbnail: 'https://images.unsplash.com/photo-1620464264627-6c8ac55531b6?q=80&w=1000'
+    },
+];
 
 interface SavedViewProps {
-  savedItems: { item: FeedContent; category: string }[];
-  onRemove: (id: string) => void;
   onBack: () => void;
 }
 
-export const SavedView: React.FC<SavedViewProps> = ({ savedItems, onRemove, onBack }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+export const SavedView: React.FC<SavedViewProps> = ({ onBack }) => {
+    // Pour l'instant, on utilise les données mock. Plus tard, cela viendra des props.
+    const savedItems = savedItemsData;
 
-  // Group items by category
-  const categories = savedItems.reduce((acc, { category }) => {
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const categoryList = Object.keys(categories);
-
-  const filteredItems = selectedCategory 
-    ? savedItems.filter(si => si.category === selectedCategory)
-    : [];
-
-  return (
-    <div className="h-screen bg-surface flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="px-6 py-8 flex items-center justify-between border-b border-on-surface/5">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={selectedCategory ? () => setSelectedCategory(null) : onBack}
-            className="w-10 h-10 rounded-full bg-on-surface/5 flex items-center justify-center text-on-surface/60 hover:text-on-surface transition-colors"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <div>
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter">
-              {selectedCategory || 'Enregistrements'}
-            </h2>
-            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
-              {selectedCategory ? `${filteredItems.length} éléments` : `${savedItems.length} éléments au total`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="w-10 h-10 rounded-full bg-on-surface/5 flex items-center justify-center text-on-surface/40">
-            <Grid size={20} />
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-        <AnimatePresence mode="wait">
-          {!selectedCategory ? (
-            <motion.div 
-              key="categories"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-2 gap-4"
-            >
-              {categoryList.length > 0 ? (
-                categoryList.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className="aspect-square bg-on-surface/5 rounded-3xl p-6 flex flex-col justify-between group hover:bg-on-surface/10 transition-all border border-on-surface/5"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-on-surface/10 flex items-center justify-center text-on-surface/60 group-hover:scale-110 transition-transform">
-                      <Bookmark size={24} />
+    return (
+        <div className="h-screen bg-white flex flex-col overflow-hidden">
+            {/* Header */}
+            <header className="px-4 py-5 flex items-center justify-between border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={onBack}
+                        className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:text-black transition-colors"
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-black text-black tracking-tighter uppercase leading-none">
+                            Enregistrements
+                        </h1>
+                        <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">
+                            {savedItems.length} {savedItems.length > 1 ? 'éléments' : 'élément'}
+                        </p>
                     </div>
-                    <div className="text-left">
-                      <h3 className="font-black uppercase italic text-sm tracking-tight leading-none mb-1">{category}</h3>
-                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-                        {categories[category]} {categories[category] > 1 ? 'éléments' : 'élément'}
-                      </p>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="col-span-2 py-20 flex flex-col items-center justify-center text-center space-y-4 opacity-40">
-                  <Bookmark size={48} strokeWidth={1} />
-                  <p className="text-sm font-medium max-w-[200px]">
-                    Vous n'avez pas encore d'enregistrements.
-                  </p>
                 </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="items"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
-              {filteredItems.map(({ item }) => (
-                <div 
-                  key={item.id}
-                  className="bg-on-surface/5 rounded-2xl overflow-hidden border border-on-surface/5 flex items-center p-3 gap-4 group"
-                >
-                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-on-surface/10">
-                    <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium line-clamp-2 leading-relaxed mb-2">
-                      {item.caption}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => onRemove(item.id)}
-                        className="text-[10px] font-bold text-on-surface-variant hover:text-[#FE2C55] flex items-center gap-1 transition-colors uppercase tracking-widest"
-                      >
-                        <Trash2 size={12} />
-                        Supprimer
-                      </button>
-                      <button className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface flex items-center gap-1 transition-colors uppercase tracking-widest">
-                        <ExternalLink size={12} />
-                        Voir
-                      </button>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto p-4">
+                {savedItems.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 space-y-4 pt-20">
+                        <Bookmark size={48} strokeWidth={1.5} />
+                        <p className="text-lg font-bold">Aucun élément enregistré</p>
+                        <p className="max-w-xs mx-auto text-sm">
+                            Appuyez sur l'icône de signet sur une vidéo ou un article pour le sauvegarder ici.
+                        </p>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-    </div>
-  );
+                ) : (
+                    <div className="space-y-4">
+                        {savedItems.map((item) => (
+                            <div 
+                                key={item.id}
+                                className="bg-gray-50 rounded-2xl p-3 flex items-center gap-4 shadow-sm border border-gray-100 cursor-pointer active:bg-gray-100 transition-colors"
+                            >
+                                <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200">
+                                    <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1 min-w-0 pr-4">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-blue-500">{item.category}</p>
+                                    <h3 className="text-md font-bold text-black truncate">{item.title}</h3>
+                                </div>
+                                <ArrowRight className="text-gray-300" size={24} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </main>
+        </div>
+    );
 };

@@ -12,6 +12,7 @@ const CATEGORIES = [
   { id: 'enregistrement', label: 'Enregistrement', icon: Bookmark },
   { id: 'boutique', label: 'TYDS SHOP', icon: ShoppingBag },
   { id: 'maps', label: 'Maps', icon: MapPin },
+  { id: 'parental', label: 'Mode Parental', icon: Users },
 ] as const;
 
 export const MenuView: React.FC<MenuViewProps> = ({ onBack, onSelectTab }) => {

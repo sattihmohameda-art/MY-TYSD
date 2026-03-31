@@ -1,13 +1,26 @@
-import { TrendingUp } from 'lucide-react';
+import { ArrowLeft, TrendingUp } from 'lucide-react';
 import { ArticleContent } from '../data/content';
 
 interface EditorialViewProps {
   article: ArticleContent;
+  onBack: () => void;
 }
 
-export function EditorialView({ article }: EditorialViewProps) {
+export function EditorialView({ article, onBack }: EditorialViewProps) {
   return (
-    <div className="pt-24 pb-16 px-6 max-w-screen-xl mx-auto space-y-8 bg-surface min-h-screen text-on-surface">
+    <div className="pt-6 pb-16 px-6 max-w-screen-xl mx-auto space-y-8 bg-surface min-h-screen text-on-surface">
+      <div className="relative flex items-center justify-center mb-6 py-4">
+        <div className="absolute left-0">
+          <button 
+              onClick={onBack}
+              className="flex items-center gap-2 text-black font-bold uppercase tracking-widest text-[9px] hover:opacity-70 transition-opacity"
+          >
+              <ArrowLeft size={16} />
+              Retour
+          </button>
+        </div>
+      </div>
+
       {/* Hero Article */}
       <article className="group cursor-pointer bg-on-surface/5 rounded-xl p-6 md:p-8 border border-on-surface/10 hover:border-on-surface/20 transition-all">
         <div className="flex flex-col md:flex-row gap-10 items-stretch">
